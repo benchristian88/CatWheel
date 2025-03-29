@@ -42,6 +42,15 @@ This isnt going to be a lesson on ESPHome, as there are many good tutorials out 
 [Getting Started with ESP Home](https://esphome.io/guides/getting_started_hassio.html)
 Get ESPHome Installed, plug in your device via a usb cable, and follow the instructions to initialize the ESP board.   Once that is done you are ready to create your sensors.
 
+### How it works
+The key feature we are using here is the Pulse Meter, that counts every time the wheel goes around, with a magnet attached to the wheel, going past the Hall Sensor.  This time between pulses is then able to be determined and that tells us how fast the wheel is going.  To work that out though, we need to figure out how big your wheel is, and create a multiplier in the ESPHome code to convert pulses to Speed.  We have added an Excel Spreadsheet to the resposity to calculate these for you.
+
+My wheel is 120cm wide, so I would put 60cm into the calculator, which would give me a mutiplier of 0.23.    I added two magnets to my wheel so I divided the mutliplier by two.  Hence the code below shows 0.114.
+
+You need to workout the multiplier for the Total distance.  
+
+I also added another sensor that gives a Yes or No to there being activity.  eg. it shows Yes when the wheel is in use.  I found this easier to use for Automations.  
+
 ### ESP Sensors
 
 ```
@@ -89,3 +98,7 @@ Assuming you got it all working, you should now be able to create a few cards in
 
 ## Roadmap
 Like any good cat project, we need a roadmap.  Right now, the way this works, the total distance measure isn't persistent, so when you update the ESPHome version, the total distance is reset to zero. This makes Coco very sad as she doesnt know how far she has been.  
+1. Persistant Total Distance
+2. Custom Made 3D Printed Slimline Box
+3. Local Speed Display
+4. Turn the whole thing into an ETSY Project and make $1B
