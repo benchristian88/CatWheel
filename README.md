@@ -1,3 +1,4 @@
 # CatWheel
 ESP Home Cat Wheel Speed and Distance Project
-![Image](https://github.com/user-attachments/assets/5e661f8b-f4e2-48d9-86c2-98c84f3644fd)
+
+![IMG_3776](https://github.com/user-attachments/assets/e44443c8-30f7-4ac7-b027-35624550737f)
