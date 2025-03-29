@@ -9,7 +9,7 @@ This is COCO, our beautiful Tonkinese girl. She is the kind of cat who follows y
 
 ## ESP Sensors
 
-'''
+```
 sensor:
   - platform: pulse_meter
     pin: 13
@@ -41,4 +41,4 @@ binary_sensor:
         // not in use
         return false;
       }  
-'''
+```
