@@ -1,5 +1,5 @@
 # CatWheel
-##ESP Home Cat Wheel Speed and Distance Project
+## ESP Home Cat Wheel Speed and Distance Project
 This respository is here to show how I made a speedo for my Cat Wheel using ESP home, Home Assistant, and a few parts from the local electronics shop.
 
 This is COCO, our beautiful Tonkinese girl. She is the kind of cat who follows you around the house and the moment you stop, she is in your lap.  She also loves her [Ferris Cat Wheel International](https://ferriscatwheelinternational.com), and uses it most days and all through the night.  
