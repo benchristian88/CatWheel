@@ -44,7 +44,7 @@ This isnt going to be a lesson on ESPHome, as there are many good tutorials out 
 Get ESPHome Installed, plug in your device via a usb cable, and follow the instructions to initialize the ESP board.   Once that is done you are ready to create your sensors.  The Adding Features section of the ESP Home Getting started is where it explains how to add the sensors you want.  The below code can likely be copied into your ESP Home YAML as it is.  
 
 ### How it works
-The key feature we are using here is the Pulse Meter, that counts every time the wheel goes around, with a magnet attached to the wheel, going past the Hall Sensor.  This time between pulses is then able to be determined and that tells us how fast the wheel is going.  To work that out though, we need to figure out how big your wheel is, and create a multiplier in the ESPHome code to convert pulses to Speed.  We have added an Excel Spreadsheet to the resposity to calculate these for you.
+The key feature we are using here is the Pulse Meter, that counts every time the wheel goes around, with a magnet attached to the wheel, going past the Hall Sensor.  This time between pulses is then able to be determined and that tells us how fast the wheel is going.  To work that out though, we need to figure out how big your wheel is, and create a multiplier in the ESPHome code to convert pulses to Speed.  We have added an [Excel Spreadsheet](https://github.com/benchristian88/CatWheel/blob/main/ESP32%20Circumference%20Calculator.xlsx) to the resposity to calculate these for you.
 
 The Spreadsheet gives you a Speed Multipler, to add to the *Cat Wheel Speed Sensor*, and a Distance Multipler, to add to the *total* sensor.
 
