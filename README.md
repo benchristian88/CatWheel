@@ -54,9 +54,10 @@ You need to note down the multiplier for the Total distance and add that in as w
 
 I also added another sensor that gives a Yes or No to there being activity.  eg. it shows Yes when the wheel is in use.  I found this easier to use for Automations.  
 
+There are a few other settings in the code that deal with things like spin up time of the wheel. When Coco first gets on, and starts running, there you want to wait for few revolutions till you start working out the speed.  The skip_initial waits for three pulses before starting to work it out. The Delta filter and the timeout 10s work together to stop recording when the wheel slows to zero.  Otherwise the ESP will keep thinking its just going really slow, and be waiting for the next reading. This way after 10 seconds of no activity, it shuts down. 
 
 ### ESP Sensors
-These are the ESP Home sensors that I added to the ESP Yaml for your device you created.
+These are the ESP Home sensors that I added to the ESP Yaml.  Full ESPHome code in the files.
 ```
 sensor:
   - platform: pulse_meter
