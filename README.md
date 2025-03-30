@@ -112,6 +112,7 @@ Like any good cat project, we need a roadmap.  Right now, the way this works, th
 4. Local Speed Display
 5. Grafana Dashboards (half done already)
 6. Microchip Reader to identify cat present
+7. Coco Youtube channel - online footage and alerts when she is running on the wheel
 
 ## Finished Product
 A happy Coco, enjoying her time on the wheel, keeping fit, and inside away from the big bad world.
