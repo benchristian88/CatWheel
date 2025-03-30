@@ -107,9 +107,11 @@ Assuming you got it all working, you should now be able to create a few cards in
 Like any good cat project, we need a roadmap.  Right now, the way this works, the total distance measure isn't persistent, so when you update the ESPHome version, the total distance is reset to zero. This makes Coco very sad as she doesnt know how far she has been.  Here are a few other ideas to make it better. I am hoping the community jumps in and we make this thing awesome.  
 **Roadmap Items**
 1. Persistant Total Distance to survive reboots
-2. Custom Made 3D Printed Slimline Box 
-3. Local Speed Display
-4. Microchip Reader to identify cat present
+2. More sensors - acceleration
+3. Custom Made 3D Printed Slimline Box 
+4. Local Speed Display
+5. Grafana Dashboards (half done already)
+6. Microchip Reader to identify cat present
 
 ## Finished Product
 A happy Coco, enjoying her time on the wheel, keeping fit, and inside away from the big bad world.
