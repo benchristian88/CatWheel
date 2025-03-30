@@ -98,7 +98,7 @@ The whole project was then installed on the cat wheel with some double sided tap
 ![IMG_4786](https://github.com/user-attachments/assets/222e008a-54ab-4604-acd9-19707f521127)
 
 ## Time for a Beer
-Assuming you got it all working, you should now be able to create a few cards in Home Assistant, add some automations, and now be having fun watching how fast your cats can run.  Coco maxes out about 8km/hour, which isnt bad for a shortarse.
+Assuming you got it all working, you should now be able to create a few cards in Home Assistant, add some automations, and now be having fun watching how fast your cats can run.  Coco maxes out about 8km/hour, which isnt bad for a shortarse.  This is what it looks like on my home assistant dashboard.
 ![IMG_3778](https://github.com/user-attachments/assets/cd16356b-1e30-4564-a57b-9446d26a1d2b)
 
 
@@ -109,4 +109,10 @@ Like any good cat project, we need a roadmap.  Right now, the way this works, th
 2. Custom Made 3D Printed Slimline Box 
 3. Local Speed Display
 4. Microchip Reader to identify cat present
+
+## Finished Product
+A happy Coco, enjoying her timne on the wheel, keeping fit, and inside away from the big bad world.
+![IMG_3775](https://github.com/user-attachments/assets/2ea086f3-e726-45d9-81dd-2381aa6705d7)
+
+
    
