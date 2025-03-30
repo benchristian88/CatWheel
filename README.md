@@ -111,7 +111,7 @@ Like any good cat project, we need a roadmap.  Right now, the way this works, th
 4. Microchip Reader to identify cat present
 
 ## Finished Product
-A happy Coco, enjoying her timne on the wheel, keeping fit, and inside away from the big bad world.
+A happy Coco, enjoying her time on the wheel, keeping fit, and inside away from the big bad world.
 ![IMG_3775](https://github.com/user-attachments/assets/2ea086f3-e726-45d9-81dd-2381aa6705d7)
 
 
