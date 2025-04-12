@@ -1,0 +1,259 @@
+substitutions:
+  name: cat-wheel
+  friendly_name: Cat Wheel
+  circumference: "1.9"
+  
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: false
+  project:
+    name: esphome.web
+    version: '1.0'
+  on_boot:
+    then:
+      - lambda: |-
+          id(distance_today).update();
+          id(distance_total).update();
+          id(speed_max).update();
+          id(speed_sensor).publish_state(0.0);
+          id(last_rotation_time_persisted) = id(last_rotation_time);
+          id(boot_time) = millis();
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+
+ota:
+  platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap: 
+    ssid: "CatWheel Fallback"
+    password: "fallback123"
+
+captive_portal:
+
+web_server:
+  port: 80
+  
+time:
+  - platform: homeassistant
+    id: my_time
+    timezone: "Pacific/Auckland"
+    on_time:
+      - seconds: 0
+        minutes: 0
+        hours: 0
+        then:
+          - script.execute: daily_reset
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: 13
+      mode: INPUT
+      inverted: true
+    name: "Wheel Sensor"
+    id: hall_sensor
+    filters:
+      - delayed_on_off: 10ms
+    on_press:
+      then:
+        - script.execute: record_rotation
+
+sensor:
+  - platform: template
+    name: "Current Speed"
+    id: speed_sensor
+    lambda: |-
+      return 0.0;  // initial value; overwritten by script
+    unit_of_measurement: "km/hr"
+    accuracy_decimals: 2
+    icon: "mdi:speedometer"
+    update_interval: never
+
+  - platform: template
+    name: "Distance Today"
+    id: distance_today
+    lambda: |-
+      return id(distance_today_val) * 0.001;
+    unit_of_measurement: "km"
+    accuracy_decimals: 2
+    icon: "mdi:run"
+    update_interval: never
+
+  - platform: template
+    name: "Total Distance"
+    id: distance_total
+    lambda: |-
+      return id(distance_total_val) * 0.001;
+    unit_of_measurement: "km"
+    accuracy_decimals: 2
+    icon: "mdi:map-marker-distance"
+    update_interval: never
+
+  - platform: template
+    name: "Max Speed"
+    id: speed_max
+    lambda: |-
+      return id(speed_max_val) * 3.6;
+    unit_of_measurement: "km/hr"
+    accuracy_decimals: 2
+    icon: "mdi:speedometer"
+    update_interval: never
+
+text_sensor:
+  - platform: template
+    name: "Last Movement"
+    id: time_since_last_move
+    update_interval: 10s
+    lambda: |-
+      uint32_t now = millis();
+      uint32_t last = id(last_rotation_time_persisted);
+      if (last == 0) {
+        return {"Never"};
+      }
+      uint32_t diff = (now - last) / 1000;
+
+      if (diff < 60) {
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%lus ago", diff);
+        return {buffer};
+      } else if (diff < 3600) {
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%lum ago", diff / 60);
+        return {buffer};
+      } else {
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%luh ago", diff / 3600);
+        return {buffer};
+      }
+
+globals:
+  - id: last_rotation_time_persisted
+    type: uint32_t
+    restore_value: yes
+    initial_value: '0'
+
+  - id: wheel_circumference
+    type: float
+    initial_value: '${circumference}'
+
+  - id: last_rotation_time
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+  - id: distance_today_val
+    type: float
+    restore_value: yes
+    initial_value: '0.0'
+
+  - id: distance_total_val
+    type: float
+    restore_value: yes
+    initial_value: '0.0'
+
+  - id: speed_max_val
+    type: float
+    restore_value: yes
+    initial_value: '0.0'
+
+  - id: boot_time
+    type: unsigned long
+    restore_value: no
+    initial_value: '0'
+
+script:
+  - id: record_rotation
+    then:
+      - lambda: |-
+          static uint32_t last_rotation = 0;
+          uint32_t now = millis();
+          if (last_rotation != 0) {
+            float delta_sec = (now - last_rotation) / 1000.0;
+            float speed = id(wheel_circumference) / delta_sec;
+            id(speed_sensor).publish_state(speed * 3.6);
+            if (speed > id(speed_max_val) + 0.1) {
+              id(speed_max_val) = speed;
+              id(speed_max).update();
+            }
+          }
+          last_rotation = now;
+          id(distance_today_val) += id(wheel_circumference);
+          id(distance_total_val) += id(wheel_circumference);
+          id(distance_today).update();
+          id(distance_total).update();
+          id(last_rotation_time) = millis();
+          id(last_rotation_time_persisted) = id(last_rotation_time);
+
+  - id: daily_reset
+    then:
+      - lambda: |-
+          id(distance_today_val) = 0.0;
+          id(speed_max_val) = 0.0;
+          id(distance_today).update();
+          id(speed_max).update();
+
+  - id: reset_all_stats
+    then:
+      - lambda: |-
+          id(distance_today_val) = 0.0;
+          id(distance_total_val) = 0.0;
+          id(speed_max_val) = 0.0;
+          id(distance_today).update();
+          id(distance_total).update();
+          id(speed_max).update();
+
+  - id: save_all_stats
+    then:
+      - logger.log: "Triggered save_all_stats (noop — values auto-persist)" 
+
+button:
+  - platform: template
+    name: "Reset All Stats"
+    id: reset_all_button
+    on_press:
+      then:
+        - script.execute: reset_all_stats
+
+  - platform: restart
+    name: "Reboot Device"
+    id: reboot_button
+
+  - platform: safe_mode
+    name: "Reboot to Safe Mode"
+
+  - platform: template
+    name: "Factory Reset"
+    id: factory_reset_button
+    on_press:
+      then:
+        - script.execute: reset_all_stats
+        - delay: 1s
+        - button.press: reboot_button
+
+interval:
+  - interval: 1min
+    then:
+      - script.execute: save_all_stats
+
+  - interval: 500ms
+    then:
+      - lambda: |-
+          uint32_t now = millis();
+          if (id(last_rotation_time) != 0 && now - id(last_rotation_time) > 2000) {
+            if (id(speed_sensor).state != 0.0) {
+              id(speed_sensor).publish_state(0.0);
+            }
+          }
+
+
