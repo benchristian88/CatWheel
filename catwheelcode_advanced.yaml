@@ -69,6 +69,17 @@ binary_sensor:
       then:
         - script.execute: record_rotation
 
+  - platform: template
+    name: "Cat Wheel Activity"
+    lambda: |-
+      if (id(speed_sensor).state > 0.5) {
+        // wheel is in use
+        return true;
+      } else {
+        // not in use
+        return false;
+      } 
+
 sensor:
   - platform: template
     name: "Current Speed"
