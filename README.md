@@ -43,7 +43,7 @@ This isnt going to be a lesson on ESPHome, as there are many good tutorials out 
 [Getting Started with ESP Home](https://esphome.io/guides/getting_started_hassio.html)
 Get ESPHome Installed, plug in your device via a usb cable, and follow the instructions to initialize the ESP board.   Once that is done you are ready to create your sensors.  The Adding Features section of the ESP Home Getting started is where it explains how to add the sensors you want.  The below code can likely be copied into your ESP Home YAML as it is.  
 
-### How it works
+### How it works  (SIMPLE VERSION)
 The key feature we are using here is the Pulse Meter, that counts every time the wheel goes around, with a magnet attached to the wheel, going past the Hall Sensor.  This time between pulses is then able to be determined and that tells us how fast the wheel is going.  To work that out though, we need to figure out how big your wheel is, and create a multiplier in the ESPHome code to convert pulses to Speed.  We have added an [Excel Spreadsheet](https://github.com/benchristian88/CatWheel/blob/main/ESP32%20Circumference%20Calculator.xlsx) to the resposity to calculate these for you.
 
 The Spreadsheet gives you a Speed Multipler, to add to the *Cat Wheel Speed Sensor*, and a Distance Multipler, to add to the *total* sensor.
@@ -93,6 +93,21 @@ binary_sensor:
 ```
 
 You will also need to Add the ESP Home Integration to Home Assistant if you havent already done that so the sensors show up and you should be ready to go.
+
+### How it works  (ADVANCED VERSION)
+Thanks to [DJBenson] (https://github.com/DJBenson/ha-stuff/tree/main/esphome/devices/cat-wheel) we have a more advanced version of the ESP Code that provides a number of other sensors.
+1. Max Speed
+2. Current Speed
+3. Total Distance
+4. Distance Today
+5. Time since last use
+6. Reset buttons to clear stats
+
+This codes doesn't use the Pulse Counter feature of ESPHome, but instead just triggers a count when the wheel goes around, and then records it.  This is more elegant to be honest.
+
+You should be ok to use the ESP code as it is, just need to update the Circumference of your wheel.  Just measure the width of your wheel, and mulitply that by 3.142 (PII)
+This value is a Variable at the top of the code, so change my value of 1.9 to whatever your answer is.
+Note my wheel is 3.8m around the circumference, but I have two magnets on the wheel, so I have halfed the the value.
 
 ## Installation
 The whole project was then installed on the cat wheel with some double sided tape, on the feet, so that when the wheel rolled around there was still enough clearance, but close.  We then tape the magnet to the wheel, so every time the wheel goes around the magnet passes the hall sensor and triggers a pulse.  This is then read by the ESP code and sent to Home Assistant.  You can see in this photo, the magnet is triggering the Hall Sensor and the light is coming on.  This shows each rotation.
