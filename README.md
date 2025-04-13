@@ -103,11 +103,11 @@ Thanks to [DJBenson] (https://github.com/DJBenson/ha-stuff/tree/main/esphome/dev
 5. Time since last use
 6. Reset buttons to clear stats
 
-This codes doesn't use the Pulse Counter feature of ESPHome, but instead just triggers a count when the wheel goes around, and then records it.  This is more elegant to be honest.
+This code doesn't use the Pulse Counter feature of ESPHome, but instead just triggers a count when the wheel goes around, and then records it.  This is more elegant to be honest.
 
 You should be ok to use the ESP code as it is, just need to update the Circumference of your wheel.  Just measure the width of your wheel, and mulitply that by 3.142 (PII)
-This value is a Variable at the top of the code, so change my value of 1.9 to whatever your answer is.
-Note my wheel is 3.8m around the circumference, but I have two magnets on the wheel, so I have halfed the the value.
+This value is a Variable at the top of the code, so change my value of 1.88 to whatever your answer is.
+Note my wheel is 3.76m around the circumference, but I have two magnets on the wheel, so I have halved the the value.
 
 ## Installation
 The whole project was then installed on the cat wheel with some double sided tape, on the feet, so that when the wheel rolled around there was still enough clearance, but close.  We then tape the magnet to the wheel, so every time the wheel goes around the magnet passes the hall sensor and triggers a pulse.  This is then read by the ESP code and sent to Home Assistant.  You can see in this photo, the magnet is triggering the Hall Sensor and the light is coming on.  This shows each rotation.
