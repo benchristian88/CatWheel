@@ -1,7 +1,7 @@
 substitutions:
   name: cat-wheel
   friendly_name: Cat Wheel
-  circumference: "1.9"
+  circumference: "1.88"
   
 esphome:
   name: ${name}
@@ -70,7 +70,7 @@ binary_sensor:
         - script.execute: record_rotation
 
   - platform: template
-    name: "Cat Wheel Activity"
+    name: "Activity"
     lambda: |-
       if (id(speed_sensor).state > 0.5) {
         // wheel is in use
