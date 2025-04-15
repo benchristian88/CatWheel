@@ -1,7 +1,6 @@
 substitutions:
   name: cat-wheel
   friendly_name: Cat Wheel
-  circumference: "1.88"
   yourtimezone: "Pacific/Auckland"
   
 esphome:
@@ -38,7 +37,7 @@ wifi:
   password: !secret wifi_password
   ap: 
     ssid: "CatWheel Fallback"
-    password: "fallback123"
+    password: "grasshopper"
 
 captive_portal:
 
@@ -74,10 +73,8 @@ binary_sensor:
     name: "Activity"
     lambda: |-
       if (id(speed_sensor).state > 0.5) {
-        // wheel is in use
         return true;
       } else {
-        // not in use
         return false;
       } 
 
@@ -86,7 +83,7 @@ sensor:
     name: "Current Speed"
     id: speed_sensor
     lambda: |-
-      return 0.0;  // initial value; overwritten by script
+      return 0.0;
     unit_of_measurement: "km/hr"
     accuracy_decimals: 2
     icon: "mdi:speedometer"
@@ -121,6 +118,38 @@ sensor:
     accuracy_decimals: 2
     icon: "mdi:speedometer"
     update_interval: never
+    
+  - platform: template
+    name: "Longest Session"
+    id: longest_session_sensor
+    lambda: |-
+      return id(longest_session_duration) / 1000.0;
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    icon: "mdi:clock-outline"
+    update_interval: never
+    
+  - platform: template
+    name: "Current Session Duration"
+    id: current_session_sensor
+    lambda: |-
+      return id(current_session_duration) / 1000.0;
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    icon: "mdi:timer-outline"
+    update_interval: never
+    
+  - platform: template
+    name: "Sessions Today"
+    id: session_count_sensor
+    lambda: |-
+      return id(session_count_today);
+    update_interval: never
+    icon: "mdi:counter"
+    
+  - platform: uptime
+    name: "ESP Uptime"
+
 
 text_sensor:
   - platform: template
@@ -157,7 +186,7 @@ globals:
 
   - id: wheel_circumference
     type: float
-    initial_value: '${circumference}'
+    initial_value: '1.88'
 
   - id: last_rotation_time
     type: uint32_t
@@ -184,6 +213,26 @@ globals:
     restore_value: no
     initial_value: '0'
 
+  - id: session_start_time
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+  - id: longest_session_duration
+    type: uint32_t
+    restore_value: yes
+    initial_value: '0'
+    
+  - id: current_session_duration
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+    
+  - id: session_count_today
+    type: uint32_t
+    restore_value: yes
+    initial_value: '0'
+
 script:
   - id: record_rotation
     then:
@@ -192,6 +241,10 @@ script:
           uint32_t now = millis();
           if (last_rotation != 0) {
             float delta_sec = (now - last_rotation) / 1000.0;
+            if (delta_sec < 0.2) {
+              ESP_LOGD("record_rotation", "Skipped rotation (too fast): %.2fs", delta_sec);
+              return;
+            }
             float speed = id(wheel_circumference) / delta_sec;
             id(speed_sensor).publish_state(speed * 3.6);
             if (speed > id(speed_max_val) + 0.1) {
@@ -204,16 +257,20 @@ script:
           id(distance_total_val) += id(wheel_circumference);
           id(distance_today).update();
           id(distance_total).update();
-          id(last_rotation_time) = millis();
-          id(last_rotation_time_persisted) = id(last_rotation_time);
-
+          id(last_rotation_time) = now;
+          id(last_rotation_time_persisted) = now;
+          if (id(session_start_time) == 0) {
+            id(session_start_time) = now;
+          }
   - id: daily_reset
     then:
       - lambda: |-
           id(distance_today_val) = 0.0;
           id(speed_max_val) = 0.0;
+          id(session_count_today) = 0;
           id(distance_today).update();
           id(speed_max).update();
+          id(session_count_sensor).update();
 
   - id: reset_all_stats
     then:
@@ -225,9 +282,9 @@ script:
           id(distance_total).update();
           id(speed_max).update();
 
-  - id: save_all_stats
+  - id: noop_save_stats
     then:
-      - logger.log: "Triggered save_all_stats (noop — values auto-persist)" 
+      - logger.log: "Triggered noop_save_stats (values auto-persist)"
 
 button:
   - platform: template
@@ -256,16 +313,40 @@ button:
 interval:
   - interval: 1min
     then:
-      - script.execute: save_all_stats
+      - script.execute: noop_save_stats
 
   - interval: 500ms
     then:
       - lambda: |-
           uint32_t now = millis();
           if (id(last_rotation_time) != 0 && now - id(last_rotation_time) > 2000) {
+            // Session has ended
             if (id(speed_sensor).state != 0.0) {
               id(speed_sensor).publish_state(0.0);
             }
+
+            if (id(session_start_time) != 0) {
+              uint32_t duration = now - id(session_start_time);
+              if (duration > id(longest_session_duration)) {
+                id(longest_session_duration) = duration;
+                id(longest_session_sensor).update();
+              }
+
+              id(session_count_today) += 1;
+              id(session_count_sensor).update();
+
+              id(current_session_duration) = 0;
+              id(current_session_sensor).update();  // <– This is fine, just runs once
+              id(session_start_time) = 0;
+            }
+
+          } else if (id(session_start_time) != 0) {
+            // Session is ongoing
+            id(current_session_duration) = now - id(session_start_time);
+
+            static uint32_t last_update_time = 0;
+            if (now - last_update_time >= 1000) {  // Only update sensor every 1s
+              id(current_session_sensor).update();
+              last_update_time = now;
+            }
           }
-
-
