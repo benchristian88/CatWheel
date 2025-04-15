@@ -121,9 +121,16 @@ Assuming you got it all working, you should now be able to create a few cards in
 ## Roadmap
 Like any good cat project, we need a roadmap. Here are a few other ideas to make it better. I am hoping the community jumps in and we make this thing awesome.  
 **Roadmap Items**
-1. Local Speed Display (DJBenson has this done, so easy, just need to buy a lcd screen and make a box)
-2. Microchip Reader to identify cat present
-3. Coco Youtube channel - online footage and alerts when she is running on the wheel
+1. More Sensors.
+   - count of times use today
+   - distance by day/week/month/6 months
+   - graph of today versus and average day
+   - average over the last 7 days
+   - this year compared to last year
+   - longest continuous session
+3. Local Speed Display (DJBenson has this done, so easy, just need to buy a lcd screen and make a box)
+4. Microchip Reader to identify cat present
+5. Coco Youtube channel - online footage and alerts when she is running on the wheel
 
 **DONE**
 1. Persistant Total Distance to survive reboots (done in Advanced code - thanks DJBenson)
