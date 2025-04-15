@@ -95,18 +95,21 @@ binary_sensor:
 You will also need to Add the ESP Home Integration to Home Assistant if you havent already done that so the sensors show up and you should be ready to go.
 
 ### How it works  (ADVANCED VERSION)
-Thanks to [DJBenson] (https://github.com/DJBenson/ha-stuff/tree/main/esphome/devices/cat-wheel) we have a more advanced version of the ESP Code that provides a number of other sensors.
+Thanks to [DJBenson] (https://github.com/DJBenson/ha-stuff/tree/main/esphome/devices/cat-wheel) for inspiration and some help from ChatGPT we have a more advanced version of the ESP Code that provides a number of other sensors.
 1. Max Speed
 2. Current Speed
 3. Total Distance
 4. Distance Today
-5. Time since last use
-6. Reset buttons to clear stats
+5. Current Session Duration
+6. Longest Session
+7. Session Count Today
+8. Time since last use
+9. Reset buttons to clear stats
 
 This code doesn't use the Pulse Counter feature of ESPHome, but instead just triggers a count when the wheel goes around, and then records it.  This is more elegant to be honest.
 
 You should be ok to use the ESP code as it is, just need to update the Circumference of your wheel.  Just measure the width of your wheel, and mulitply that by 3.142 (PII)
-This value is a Variable at the top of the code, so change my value of 1.88 to whatever your answer is.
+This value is a Variable in the Globals, so change my value of 1.88 to whatever your answer is.
 Note my wheel is 3.76m around the circumference, but I have two magnets on the wheel, so I have halved the the value.
 
 ## Installation
