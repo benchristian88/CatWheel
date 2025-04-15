@@ -95,7 +95,7 @@ binary_sensor:
 You will also need to Add the ESP Home Integration to Home Assistant if you havent already done that so the sensors show up and you should be ready to go.
 
 ### How it works  (ADVANCED VERSION)
-Thanks to [DJBenson] {https://github.com/DJBenson/ha-stuff/tree/main/esphome/devices/cat-wheel} for inspiration and some help from ChatGPT we have a more advanced version of the ESP Code that provides a number of other sensors.
+Thanks to [DJBenson](https://github.com/DJBenson/ha-stuff/tree/main/esphome/devices/cat-wheel) for inspiration and some help from ChatGPT we have a more advanced version of the ESP Code that provides a number of other sensors.
 1. Max Speed
 2. Current Speed
 3. Total Distance
