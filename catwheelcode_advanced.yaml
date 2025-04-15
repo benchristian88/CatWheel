@@ -268,9 +268,11 @@ script:
           id(distance_today_val) = 0.0;
           id(speed_max_val) = 0.0;
           id(session_count_today) = 0;
+          id(longest_session_duration) = 0;
           id(distance_today).update();
           id(speed_max).update();
           id(session_count_sensor).update();
+          id(longest_session_sensor).update();
 
   - id: reset_all_stats
     then:
