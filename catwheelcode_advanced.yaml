@@ -409,6 +409,13 @@ button:
       then:
         - script.execute: reset_all_stats
 
+  - platform: template
+    name: "Reset Daily Stats"
+    id: reset_daily_button
+    on_press:
+      then:
+        - script.execute: daily_reset
+
   - platform: restart
     name: "Reboot Device"
     id: reboot_button
