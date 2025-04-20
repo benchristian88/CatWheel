@@ -24,7 +24,7 @@ First things, we needed a trip to the local electronics store to get an ESP32 De
 ### Wiring
 What we needed to do here is wire up the Hall Sensor +,-, and S to the ESP.  
 
-1. We cabled the S pin on the Hall to the D13 on the ESP. You can pick any pin, but note in the Sensor Code below, you need to pick the Pin Number you wire up. I picked Pin 13, lucky for some.
+1. We cabled the S pin on the Hall to the D14 on the ESP. You can pick any GPIO pin, but note in the Sensor Code below, you need to pick the Pin Number you wire up. I picked Pin 14.
 2. Wire the negative - Hall pin to GND on the ESP
 3. And the + to the VIN   (i think probably should wire to the 3.3V and not VIN, thinking about that, but it works, so oh well)
 
