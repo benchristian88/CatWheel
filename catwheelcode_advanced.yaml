@@ -68,7 +68,7 @@ binary_sensor:
   - platform: gpio
     pin:
       number: 14
-      mode: INPUT
+      mode: INPUT_PULLUP
       inverted: true
     name: "Wheel Sensor"
     id: hall_sensor
@@ -234,14 +234,11 @@ text_sensor:
   # Speed Zone of the session (only updates while moving)
   - platform: template
     name: "Speed Zone"
+    id: speed_zone
     lambda: |-
-      float speed = id(speed_sensor).state;
-      if (speed < 0.5) return {};  // Suppress update when idle
-      else if (speed < 3.0) return {"Walking"};
-      else if (speed < 6.0) return {"Jogging"};
-      else if (speed < 9.0) return {"Running"};
-      else return {"Sprinting"};
-    update_interval: 5s
+      return {"Idle"};  // Just a fallback
+    update_interval: never
+
 
 # ========== Globals ==========
 # Used to store persistent or runtime values
@@ -318,58 +315,80 @@ globals:
     restore_value: no
     initial_value: 'false'
 
+  - id: wheel_moving
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+
+  - id: stopped_sent
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+
 # ========== Scripts ==========
 script:
   # Called whenever the wheel rotates
   - id: record_rotation
     then:
-    - lambda: |-
-        static uint32_t last_rotation = 0;
-        uint32_t now = millis();
+      - lambda: |-
+          static uint32_t last_rotation = 0;
+          static float last_speed = 0;
+          uint32_t now = millis();
 
-        float delta_sec = 0;
-        if (last_rotation != 0) {
-          delta_sec = (now - last_rotation) / 1000.0;
-          
-          if (delta_sec < 0.5) {
-            if (id(debug_enabled)) {
-              ESP_LOGD("record_rotation", "Skipped rotation: delta too short: %.2fs", delta_sec);
+          float delta_sec = 0;
+          if (last_rotation != 0) {
+            delta_sec = (now - last_rotation) / 1000.0;
+            if (delta_sec < 0.5) {
+              if (id(debug_enabled)) {
+                ESP_LOGD("record_rotation", "Skipped rotation: delta too short: %.2fs", delta_sec);
+              }
+              return;
             }
-            return;
+
+            if (delta_sec > 30.0) {
+              if (id(debug_enabled)) {
+                ESP_LOGD("record_rotation", "Long gap (%.2fs), treating as new session", delta_sec);
+              }
+              id(session_start_time) = now;
+            } else {
+              float current_speed = id(wheel_circumference) / delta_sec;
+
+              if (current_speed > 0.1) {
+                float smoothed_speed = (last_speed * 0.3) + (current_speed * 0.7);
+                last_speed = smoothed_speed;
+                id(speed_sensor).publish_state(smoothed_speed * 3.6);
+
+                float kmph = smoothed_speed * 3.6;
+                if (kmph < 3.0) id(speed_zone).publish_state("Walking");
+                else if (kmph < 6.0) id(speed_zone).publish_state("Jogging");
+                else if (kmph < 9.0) id(speed_zone).publish_state("Running");
+                else id(speed_zone).publish_state("Sprinting");
+
+                id(wheel_moving) = true; // <-- new flag to indicate movement
+
+                if (current_speed > id(speed_max_val) + 0.1) {
+                  id(speed_max_val) = current_speed;
+                  id(speed_max).update();
+                }
+              }
+            }
           }
 
-          if (delta_sec > 30.0) {
-            if (id(debug_enabled)) {
-              ESP_LOGD("record_rotation", "Long gap (%.2fs), treating as new session", delta_sec);
-            }
+          last_rotation = now;
+          id(last_rotation_time) = now;
+          id(last_rotation_time_persisted) = now;
+
+          id(distance_today_val) += id(wheel_circumference);
+          id(distance_total_val) += id(wheel_circumference);
+          id(distance_today).update();
+          id(distance_total).update();
+
+          if (id(session_start_time) == 0) {
             id(session_start_time) = now;
-          } else {
-            static float last_speed = 0;
-            float current_speed = id(wheel_circumference) / delta_sec;
-            if (current_speed > 0.1) {
-              float smoothed_speed = (last_speed * 0.3) + (current_speed * 0.7);
-              last_speed = smoothed_speed;
-              id(speed_sensor).publish_state(smoothed_speed * 3.6);
-            }
-
-            if (current_speed > id(speed_max_val) + 0.1) {
-              id(speed_max_val) = current_speed;
-              id(speed_max).update();
-            }
           }
-        }
 
-        last_rotation = now;
-        id(distance_today_val) += id(wheel_circumference);
-        id(distance_total_val) += id(wheel_circumference);
-        id(distance_today).update();
-        id(distance_total).update();
-        id(last_rotation_time) = now;
-        id(last_rotation_time_persisted) = now;
-
-        if (id(session_start_time) == 0) {
-          id(session_start_time) = now;
-        }
+          // Reset "stopped_sent" so it can be sent again next time the wheel stops
+          id(stopped_sent) = false;
 
   # Clears daily stats at midnight
   - id: daily_reset
@@ -456,6 +475,22 @@ interval:
     then:
       - script.execute: noop_save_stats
 
+# Every 5s: run script to update state)
+  - interval: 5s
+    then:
+      - lambda: |-
+          if (!id(wheel_moving)) {
+            if (!id(stopped_sent)) {
+              id(speed_zone).publish_state("Stopped");
+              id(stopped_sent) = true;
+              if (id(debug_enabled)) {
+                ESP_LOGD("speed_zone", "Stopped published after inactivity");
+              }
+            }
+          } else {
+            id(wheel_moving) = false;  // reset unless another rotation comes in
+          }
+
   # Every 500ms: update session tracking logic
   - interval: 500ms
     then:
@@ -489,6 +524,7 @@ interval:
             id(current_session_sensor).update();
             id(session_start_time) = 0;
             id(speed_sensor).publish_state(0.0);
+            id(speed_zone).publish_state("Stopped");
 
           } else if (id(session_start_time) != 0) {
             // Session is still going
