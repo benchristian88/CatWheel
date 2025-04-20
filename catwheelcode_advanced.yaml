@@ -1,8 +1,11 @@
+# ========== Substitutions ==========
+# Define reusable variables
 substitutions:
   name: cat-wheel
   friendly_name: Cat Wheel
   yourtimezone: "Pacific/Auckland"
-  
+
+# ========== ESPHome Setup ==========
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
@@ -11,6 +14,7 @@ esphome:
     name: esphome.web
     version: '1.0'
   on_boot:
+    # On boot, force update of key sensors and set initial state
     then:
       - lambda: |-
           id(distance_today).update();
@@ -20,15 +24,15 @@ esphome:
           id(last_rotation_time_persisted) = id(last_rotation_time);
           id(boot_time) = millis();
 
+# ========== ESP32 Board ==========
 esp32:
   board: esp32dev
   framework:
     type: arduino
 
+# ========== Logging, API, OTA, and Network ==========
 logger:
-
 api:
-
 ota:
   platform: esphome
 
@@ -41,24 +45,29 @@ wifi:
 
 captive_portal:
 
+# ========== Web Interface ==========
 web_server:
   port: 80
-  
+
+# ========== Time Management ==========
 time:
   - platform: homeassistant
     id: my_time
     timezone: '${yourtimezone}'
     on_time:
+      # Run daily reset script at midnight
       - seconds: 0
         minutes: 0
         hours: 0
         then:
           - script.execute: daily_reset
 
+# ========== Binary Sensors ==========
 binary_sensor:
+  # Physical sensor triggered by the wheel (e.g., Hall effect sensor)
   - platform: gpio
     pin:
-      number: 13
+      number: 14
       mode: INPUT
       inverted: true
     name: "Wheel Sensor"
@@ -69,6 +78,7 @@ binary_sensor:
       then:
         - script.execute: record_rotation
 
+  # Shows activity based on current speed
   - platform: template
     name: "Activity"
     lambda: |-
@@ -78,7 +88,9 @@ binary_sensor:
         return false;
       } 
 
+# ========== Sensor Templates ==========
 sensor:
+  # Current calculated wheel speed in km/hr
   - platform: template
     name: "Current Speed"
     id: speed_sensor
@@ -89,16 +101,18 @@ sensor:
     icon: "mdi:speedometer"
     update_interval: never
 
+  # Distance traveled today
   - platform: template
     name: "Distance Today"
     id: distance_today
     lambda: |-
-      return id(distance_today_val) * 0.001;
+      return id(distance_today_val) / 1000;
     unit_of_measurement: "km"
     accuracy_decimals: 2
     icon: "mdi:run"
     update_interval: never
 
+  # Total distance over all time
   - platform: template
     name: "Total Distance"
     id: distance_total
@@ -109,6 +123,7 @@ sensor:
     icon: "mdi:map-marker-distance"
     update_interval: never
 
+  # Max speed reached today
   - platform: template
     name: "Max Speed"
     id: speed_max
@@ -118,7 +133,8 @@ sensor:
     accuracy_decimals: 2
     icon: "mdi:speedometer"
     update_interval: never
-    
+
+  # Longest single session duration today (seconds)
   - platform: template
     name: "Longest Session"
     id: longest_session_sensor
@@ -128,7 +144,8 @@ sensor:
     accuracy_decimals: 0
     icon: "mdi:clock-outline"
     update_interval: never
-    
+
+  # Duration of current session (in progress)
   - platform: template
     name: "Current Session Duration"
     id: current_session_sensor
@@ -138,7 +155,8 @@ sensor:
     accuracy_decimals: 0
     icon: "mdi:timer-outline"
     update_interval: never
-    
+
+  # Number of valid sessions today
   - platform: template
     name: "Sessions Today"
     id: session_count_sensor
@@ -146,12 +164,26 @@ sensor:
       return id(session_count_today);
     update_interval: never
     icon: "mdi:counter"
-    
+
+  # Uptime for the ESP device
   - platform: uptime
     name: "ESP Uptime"
 
+  # Last Session Duration
+  - platform: template
+    name: "Last Session Duration"
+    id: last_session_sensor
+    lambda: |-
+      return id(last_session_duration) / 1000.0;
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    icon: "mdi:history"
+    update_interval: never
+  
 
+# ========== Text Sensors ==========
 text_sensor:
+  # Time since last detected movement on the wheel
   - platform: template
     name: "Last Movement"
     id: time_since_last_move
@@ -177,7 +209,42 @@ text_sensor:
         snprintf(buffer, sizeof(buffer), "%luh ago", diff / 3600);
         return {buffer};
       }
+  # Summary of the Session
+  - platform: template
+    name: "Session Summary"
+    lambda: |-
+      char buffer[64];
+      snprintf(buffer, sizeof(buffer), "%.2f km / %d sessions", id(distance_today).state, id(session_count_today));
+      return {buffer};
 
+  # Health Status 
+  - platform: template
+    name: "Health Status"
+    lambda: |-
+      if (millis() - id(boot_time) < 60000) {
+        return {"Starting..."};
+      } else if (id(last_rotation_time_persisted) == 0) {
+        return {"No movement"};
+      } else {
+        return {"OK"};
+      }
+    update_interval: 30s
+    icon: "mdi:heart-pulse"
+  
+  # Speed Zone of the session (only updates while moving)
+  - platform: template
+    name: "Speed Zone"
+    lambda: |-
+      float speed = id(speed_sensor).state;
+      if (speed < 0.5) return {};  // Suppress update when idle
+      else if (speed < 3.0) return {"Walking"};
+      else if (speed < 6.0) return {"Jogging"};
+      else if (speed < 9.0) return {"Running"};
+      else return {"Sprinting"};
+    update_interval: 5s
+
+# ========== Globals ==========
+# Used to store persistent or runtime values
 globals:
   - id: last_rotation_time_persisted
     type: uint32_t
@@ -186,7 +253,7 @@ globals:
 
   - id: wheel_circumference
     type: float
-    initial_value: '1.88'
+    initial_value: '1.88'  # meters
 
   - id: last_rotation_time
     type: uint32_t
@@ -222,46 +289,89 @@ globals:
     type: uint32_t
     restore_value: yes
     initial_value: '0'
-    
+
   - id: current_session_duration
     type: uint32_t
     restore_value: no
     initial_value: '0'
-    
+
   - id: session_count_today
     type: uint32_t
     restore_value: yes
     initial_value: '0'
 
+  - id: session_end_grace_period
+    type: uint32_t
+    initial_value: '5000'  # ms: Grace period before ending session
+
+  - id: minimum_session_duration
+    type: uint32_t
+    initial_value: '3000'  # ms: Ignore sessions shorter than this
+
+  - id: last_session_duration
+    type: uint32_t
+    restore_value: yes
+    initial_value: '0'
+
+  - id: debug_enabled
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+# ========== Scripts ==========
 script:
+  # Called whenever the wheel rotates
   - id: record_rotation
     then:
-      - lambda: |-
-          static uint32_t last_rotation = 0;
-          uint32_t now = millis();
-          if (last_rotation != 0) {
-            float delta_sec = (now - last_rotation) / 1000.0;
-            if (delta_sec < 0.2) {
-              ESP_LOGD("record_rotation", "Skipped rotation (too fast): %.2fs", delta_sec);
-              return;
+    - lambda: |-
+        static uint32_t last_rotation = 0;
+        uint32_t now = millis();
+
+        float delta_sec = 0;
+        if (last_rotation != 0) {
+          delta_sec = (now - last_rotation) / 1000.0;
+          
+          if (delta_sec < 0.5) {
+            if (id(debug_enabled)) {
+              ESP_LOGD("record_rotation", "Skipped rotation: delta too short: %.2fs", delta_sec);
             }
-            float speed = id(wheel_circumference) / delta_sec;
-            id(speed_sensor).publish_state(speed * 3.6);
-            if (speed > id(speed_max_val) + 0.1) {
-              id(speed_max_val) = speed;
+            return;
+          }
+
+          if (delta_sec > 30.0) {
+            if (id(debug_enabled)) {
+              ESP_LOGD("record_rotation", "Long gap (%.2fs), treating as new session", delta_sec);
+            }
+            id(session_start_time) = now;
+          } else {
+            static float last_speed = 0;
+            float current_speed = id(wheel_circumference) / delta_sec;
+            if (current_speed > 0.1) {
+              float smoothed_speed = (last_speed * 0.3) + (current_speed * 0.7);
+              last_speed = smoothed_speed;
+              id(speed_sensor).publish_state(smoothed_speed * 3.6);
+            }
+
+            if (current_speed > id(speed_max_val) + 0.1) {
+              id(speed_max_val) = current_speed;
               id(speed_max).update();
             }
           }
-          last_rotation = now;
-          id(distance_today_val) += id(wheel_circumference);
-          id(distance_total_val) += id(wheel_circumference);
-          id(distance_today).update();
-          id(distance_total).update();
-          id(last_rotation_time) = now;
-          id(last_rotation_time_persisted) = now;
-          if (id(session_start_time) == 0) {
-            id(session_start_time) = now;
-          }
+        }
+
+        last_rotation = now;
+        id(distance_today_val) += id(wheel_circumference);
+        id(distance_total_val) += id(wheel_circumference);
+        id(distance_today).update();
+        id(distance_total).update();
+        id(last_rotation_time) = now;
+        id(last_rotation_time_persisted) = now;
+
+        if (id(session_start_time) == 0) {
+          id(session_start_time) = now;
+        }
+
+  # Clears daily stats at midnight
   - id: daily_reset
     then:
       - lambda: |-
@@ -274,6 +384,7 @@ script:
           id(session_count_sensor).update();
           id(longest_session_sensor).update();
 
+  # Resets everything including total distance
   - id: reset_all_stats
     then:
       - lambda: |-
@@ -284,10 +395,12 @@ script:
           id(distance_total).update();
           id(speed_max).update();
 
+  # Placeholder script just to force sensor updates every minute
   - id: noop_save_stats
     then:
       - logger.log: "Triggered noop_save_stats (values auto-persist)"
 
+# ========== Buttons ==========
 button:
   - platform: template
     name: "Reset All Stats"
@@ -312,42 +425,70 @@ button:
         - delay: 1s
         - button.press: reboot_button
 
+  # Button to Simulate a Wheel Rotation for testing
+  - platform: template
+    name: "Simulate Wheel Turn"
+    on_press:
+      then:
+        - script.execute: record_rotation
+
+  #Button to toggle debug logging
+  - platform: template
+    name: "Toggle Debug Logging"
+    on_press:
+      then:
+        - lambda: |-
+            id(debug_enabled) = !id(debug_enabled);
+            ESP_LOGI("debug_toggle", "Debug logging %s", id(debug_enabled) ? "ENABLED" : "DISABLED");
+
+
+# ========== Periodic Tasks ==========
 interval:
+  # Every minute: run save script (to persist values)
   - interval: 1min
     then:
       - script.execute: noop_save_stats
 
+  # Every 500ms: update session tracking logic
   - interval: 500ms
     then:
       - lambda: |-
           uint32_t now = millis();
-          if (id(last_rotation_time) != 0 && now - id(last_rotation_time) > 2000) {
-            // Session has ended
-            if (id(speed_sensor).state != 0.0) {
-              id(speed_sensor).publish_state(0.0);
-            }
+          const uint32_t grace = id(session_end_grace_period);
 
-            if (id(session_start_time) != 0) {
-              uint32_t duration = now - id(session_start_time);
+          if (id(session_start_time) != 0 && (now - id(last_rotation_time) > grace)) {
+            // Session ending
+            uint32_t duration = now - id(session_start_time);
+
+            if (duration >= id(minimum_session_duration)) {
+              id(session_count_today) += 1;
+              id(session_count_sensor).update();
+              id(last_session_duration) = duration;
+              id(last_session_sensor).update();
+
               if (duration > id(longest_session_duration)) {
                 id(longest_session_duration) = duration;
                 id(longest_session_sensor).update();
+                ESP_LOGD("session", "🎉 New longest session: %u ms", duration);
+              } else {
+                ESP_LOGD("session", "Session ended. Duration: %u ms", duration);
               }
-
-              id(session_count_today) += 1;
-              id(session_count_sensor).update();
-
-              id(current_session_duration) = 0;
-              id(current_session_sensor).update();  // <– This is fine, just runs once
-              id(session_start_time) = 0;
+            } else {
+              ESP_LOGD("session", "Short session ignored. Duration: %u ms", duration);
             }
 
+            // Reset session state
+            id(current_session_duration) = 0;
+            id(current_session_sensor).update();
+            id(session_start_time) = 0;
+            id(speed_sensor).publish_state(0.0);
+
           } else if (id(session_start_time) != 0) {
-            // Session is ongoing
+            // Session is still going
             id(current_session_duration) = now - id(session_start_time);
 
             static uint32_t last_update_time = 0;
-            if (now - last_update_time >= 1000) {  // Only update sensor every 1s
+            if (now - last_update_time >= 1000) {
               id(current_session_sensor).update();
               last_update_time = now;
             }
