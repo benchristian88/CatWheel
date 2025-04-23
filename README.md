@@ -112,7 +112,7 @@ You should be ok to use the ESP code as it is, just need to update the Circumfer
 This value is a Variable in the Globals, so change my value of 1.88 to whatever your answer is.
 Note my wheel is 3.76m around the circumference, but I have two magnets on the wheel, so I have halved the the value.
 
-<img width="330" alt="SENSORS" src="https://github.com/user-attachments/assets/dbc24af0-a180-46bd-8956-dbdae568178c" /> <img width="326" alt="CONTROLS" src="https://github.com/user-attachments/assets/142d2d27-6a86-4b83-b22b-579196f9e1e1" /> <img width="333" alt="configuration" src="https://github.com/user-attachments/assets/1c9da979-1498-45c8-a7f9-2a85888927b6" />
+<img width="330" alt="SENSORS" src="https://github.com/user-attachments/assets/dbc24af0-a180-46bd-8956-dbdae568178c" /> <img width="327" alt="MORESENSORS" src="https://github.com/user-attachments/assets/0fbcf502-04b7-4cf0-9969-05224fb2e02c" /> <img width="326" alt="CONTROLS" src="https://github.com/user-attachments/assets/142d2d27-6a86-4b83-b22b-579196f9e1e1" /> <img width="333" alt="configuration" src="https://github.com/user-attachments/assets/1c9da979-1498-45c8-a7f9-2a85888927b6" />
 
 ## Installation
 The whole project was then installed on the cat wheel with some double sided tape, on the feet, so that when the wheel rolled around there was still enough clearance, but close.  We then tape the magnet to the wheel, so every time the wheel goes around the magnet passes the hall sensor and triggers a pulse.  This is then read by the ESP code and sent to Home Assistant.  You can see in this photo, the magnet is triggering the Hall Sensor and the light is coming on.  This shows each rotation.
